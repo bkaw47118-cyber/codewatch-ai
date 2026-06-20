@@ -1,0 +1,63 @@
+name: CodeWatch AI — Analyse automatique
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.py'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.py'
+
+jobs:
+  codewatch-analysis:
+    runs-on: ubuntu-latest
+    name: Analyse statique + IA
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Installation des outils SAST
+        run: |
+          pip install pylint bandit semgrep requests
+
+      - name: Analyse Pylint
+        run: |
+          echo "=== PYLINT ===" 
+          pylint **/*.py --output-format=text --score=no || true
+
+      - name: Analyse Bandit
+        run: |
+          echo "=== BANDIT ==="
+          bandit -r . -q || true
+
+      - name: Analyse Semgrep
+        run: |
+          echo "=== SEMGREP ==="
+          semgrep --config=auto . || true
+
+      - name: Envoi à CodeWatch AI API
+        run: |
+          echo "=== CODEWATCHAI LLM ANALYSIS ==="
+          for file in $(find . -name "*.py" -not -path "./venv/*"); do
+            echo "Analyse de $file..."
+            curl -s -X POST http://5.78.97.46:8000/analyze \
+              -F "file=@$file" \
+              --max-time 120 | python3 -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              print(f'Fichier: {data[\"filename\"]}')
+              print(f'Total issues: {data[\"sast_results\"][\"total_issues\"]}')
+              print('---')
+          except:
+              print('Analyse ignorée')
+          " || true
+          done
