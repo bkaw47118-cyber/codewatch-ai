@@ -3,12 +3,8 @@ name: CodeWatch AI — Analyse automatique
 on:
   push:
     branches: [ main ]
-    paths:
-      - '**.py'
   pull_request:
     branches: [ main ]
-    paths:
-      - '**.py'
 
 jobs:
   codewatch-analysis:
