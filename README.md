@@ -82,5 +82,5 @@ open http://localhost:8000
 ---
 
 **Mémoire de fin d'études — ENPO-MA 2026**  
-Kawther BOUZEROUATA · Encadrante : Mme. Djebbar Esma  
+Kawther BOUZEROUAT.
 *Ingénierie du Management et des Systèmes d'Information*
