@@ -1,13 +1,105 @@
 {
-  "run_date": "3",
-  "commit": "7344ccd",
+  "run_date": "4",
+  "commit": "b36845f",
   "branch": "main",
-  "global_score": 100,
-  "total_files": 0,
-  "total_issues": 0,
-  "avg_issues": 0,
+  "global_score": 84,
+  "total_files": 6,
+  "total_issues": 48,
+  "avg_issues": 8.0,
   "badge_color": "brightgreen",
   "badge_label": "excellent",
-  "critical_files": [],
-  "details": []
+  "critical_files": [
+    {
+      "file": "__init__.py",
+      "issues": 0,
+      "pylint": 0,
+      "bandit": 0,
+      "semgrep": 0
+    },
+    {
+      "file": "analyzer.py",
+      "issues": 14,
+      "pylint": 7,
+      "bandit": 7,
+      "semgrep": 0
+    },
+    {
+      "file": "llm_client.py",
+      "issues": 6,
+      "pylint": 6,
+      "bandit": 0,
+      "semgrep": 0
+    },
+    {
+      "file": "main.py",
+      "issues": 14,
+      "pylint": 13,
+      "bandit": 0,
+      "semgrep": 1
+    },
+    {
+      "file": "database.py",
+      "issues": 9,
+      "pylint": 9,
+      "bandit": 0,
+      "semgrep": 0
+    },
+    {
+      "file": "prompt_builder.py",
+      "issues": 5,
+      "pylint": 5,
+      "bandit": 0,
+      "semgrep": 0
+    }
+  ],
+  "details": [
+    {
+      "file": "__init__.py",
+      "issues": 0,
+      "pylint": 0,
+      "bandit": 0,
+      "semgrep": 0,
+      "mode": "standard"
+    },
+    {
+      "file": "analyzer.py",
+      "issues": 14,
+      "pylint": 7,
+      "bandit": 7,
+      "semgrep": 0,
+      "mode": "standard"
+    },
+    {
+      "file": "llm_client.py",
+      "issues": 6,
+      "pylint": 6,
+      "bandit": 0,
+      "semgrep": 0,
+      "mode": "standard"
+    },
+    {
+      "file": "main.py",
+      "issues": 14,
+      "pylint": 13,
+      "bandit": 0,
+      "semgrep": 1,
+      "mode": "standard"
+    },
+    {
+      "file": "database.py",
+      "issues": 9,
+      "pylint": 9,
+      "bandit": 0,
+      "semgrep": 0,
+      "mode": "standard"
+    },
+    {
+      "file": "prompt_builder.py",
+      "issues": 5,
+      "pylint": 5,
+      "bandit": 0,
+      "semgrep": 0,
+      "mode": "standard"
+    }
+  ]
 }
