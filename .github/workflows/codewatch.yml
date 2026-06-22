@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   codewatch-analysis:
     runs-on: ubuntu-latest
@@ -26,7 +31,7 @@ jobs:
 
       - name: Analyse Pylint
         run: |
-          echo "=== PYLINT ===" 
+          echo "=== PYLINT ==="
           pylint **/*.py --output-format=text --score=no || true
 
       - name: Analyse Bandit
@@ -39,21 +44,336 @@ jobs:
           echo "=== SEMGREP ==="
           semgrep --config=auto . || true
 
-      - name: Envoi à CodeWatch AI API
+      - name: Analyse CodeWatch AI + Génération rapport
+        id: codewatch
+        env:
+          API_URL: http://5.78.97.46:8000
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCORE_THRESHOLD: 30
         run: |
-          echo "=== CODEWATCHAI LLM ANALYSIS ==="
-          for file in $(find . -name "*.py" -not -path "./venv/*"); do
-            echo "Analyse de $file..."
-            curl -s -X POST http://5.78.97.46:8000/analyze \
-              -F "file=@$file" \
-              --max-time 120 | python3 -c "
-          import sys, json
+          python3 << 'PYEOF'
+          import os, json, requests, glob
+
+          api_url   = os.environ["API_URL"]
+          threshold = int(os.environ.get("SCORE_THRESHOLD", 30))
+
+          results   = []
+          py_files  = [f for f in glob.glob("**/*.py", recursive=True)
+                       if "venv" not in f and ".git" not in f]
+
+          print(f"Fichiers Python trouvés : {len(py_files)}")
+
+          for fpath in py_files:
+              print(f"  Analyse : {fpath}")
+              try:
+                  with open(fpath, "rb") as fh:
+                      resp = requests.post(f"{api_url}/analyze",
+                                           files={"file": (os.path.basename(fpath), fh, "text/plain")},
+                                           timeout=180)
+                  if resp.status_code == 200:
+                      data = resp.json()
+                      results.append(data)
+                      print(f"    Issues: {data['sast_results']['total_issues']}")
+                  else:
+                      print(f"    Erreur HTTP {resp.status_code}")
+              except Exception as e:
+                  print(f"    Exception: {e}")
+
+          # ── Statistiques globales ──
+          total_files   = len(results)
+          total_issues  = sum(r["sast_results"]["total_issues"] for r in results)
+          avg_issues    = round(total_issues / total_files, 1) if total_files else 0
+          critical_files = [r for r in results if r["sast_results"]["total_issues"] > threshold]
+
+          # Score global simplifié (0-100, plus c'est haut mieux c'est)
+          max_issues = max((r["sast_results"]["total_issues"] for r in results), default=0)
+          global_score = max(0, 100 - int(avg_issues * 2)) if results else 100
+
+          # ── Déterminer couleur badge ──
+          if global_score >= 80:
+              badge_color = "brightgreen"
+              badge_label = "excellent"
+          elif global_score >= 60:
+              badge_color = "green"
+              badge_label = "good"
+          elif global_score >= 40:
+              badge_color = "yellow"
+              badge_label = "fair"
+          else:
+              badge_color = "red"
+              badge_label = "critical"
+
+          # ── Écrire outputs pour steps suivants ──
+          with open(os.environ["GITHUB_OUTPUT"], "a") as gh_out:
+              gh_out.write(f"total_files={total_files}\n")
+              gh_out.write(f"total_issues={total_issues}\n")
+              gh_out.write(f"avg_issues={avg_issues}\n")
+              gh_out.write(f"global_score={global_score}\n")
+              gh_out.write(f"badge_color={badge_color}\n")
+              gh_out.write(f"badge_label={badge_label}\n")
+              gh_out.write(f"critical_count={len(critical_files)}\n")
+              # Seuil dépassé ?
+              alert = "true" if any(r["sast_results"]["total_issues"] > threshold for r in results) else "false"
+              gh_out.write(f"alert={alert}\n")
+
+          # ── Sauvegarder résultats JSON pour GitHub Pages ──
+          os.makedirs("docs", exist_ok=True)
+          report_data = {
+              "run_date": os.environ.get("GITHUB_RUN_NUMBER", "N/A"),
+              "commit":   os.environ.get("GITHUB_SHA", "N/A")[:7],
+              "branch":   os.environ.get("GITHUB_REF_NAME", "main"),
+              "global_score":  global_score,
+              "total_files":   total_files,
+              "total_issues":  total_issues,
+              "avg_issues":    avg_issues,
+              "badge_color":   badge_color,
+              "badge_label":   badge_label,
+              "critical_files": [{"file": r["filename"],
+                                   "issues": r["sast_results"]["total_issues"],
+                                   "pylint": r["sast_results"]["summary"]["pylint_count"],
+                                   "bandit": r["sast_results"]["summary"]["bandit_count"],
+                                   "semgrep": r["sast_results"]["summary"]["semgrep_count"]}
+                                  for r in results],
+              "details": [{"file": r["filename"],
+                            "issues": r["sast_results"]["total_issues"],
+                            "pylint": r["sast_results"]["summary"]["pylint_count"],
+                            "bandit": r["sast_results"]["summary"]["bandit_count"],
+                            "semgrep": r["sast_results"]["summary"]["semgrep_count"],
+                            "mode":   r.get("mode","standard")}
+                           for r in results]
+          }
+
+          with open("docs/report.json", "w") as f:
+              json.dump(report_data, f, indent=2)
+
+          # ── Générer rapport HTML GitHub Pages ──
+          html = f"""<!DOCTYPE html>
+          <html lang="fr">
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1.0">
+          <title>CodeWatch AI — Rapport de sécurité</title>
+          <style>
+            *{{margin:0;padding:0;box-sizing:border-box}}
+            body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#0d0d0d;padding:32px}}
+            .header{{background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;padding:32px;border-radius:16px;margin-bottom:28px}}
+            .header h1{{font-size:1.6rem;font-weight:700;margin-bottom:6px}}
+            .header p{{font-size:0.88rem;opacity:0.85}}
+            .kpi-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}}
+            .kpi{{background:white;border:1px solid #e5e5e5;border-radius:12px;padding:20px;border-top:3px solid}}
+            .kpi.blue{{border-top-color:#2563eb}}.kpi.green{{border-top-color:#10b981}}
+            .kpi.red{{border-top-color:#ef4444}}.kpi.yellow{{border-top-color:#f59e0b}}
+            .kpi-val{{font-size:2rem;font-weight:700;line-height:1;margin-bottom:4px}}
+            .kpi.blue .kpi-val{{color:#2563eb}}.kpi.green .kpi-val{{color:#10b981}}
+            .kpi.red .kpi-val{{color:#ef4444}}.kpi.yellow .kpi-val{{color:#f59e0b}}
+            .kpi-label{{font-size:0.73rem;color:#999;text-transform:uppercase;letter-spacing:0.5px}}
+            .card{{background:white;border:1px solid #e5e5e5;border-radius:12px;padding:24px;margin-bottom:20px}}
+            .card h2{{font-size:0.78rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f0f0f0}}
+            table{{width:100%;border-collapse:collapse}}
+            th{{text-align:left;font-size:0.72rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;padding:8px 12px;border-bottom:1px solid #f0f0f0}}
+            td{{padding:10px 12px;font-size:0.84rem;border-bottom:1px solid #f9f9f9}}
+            tr:last-child td{{border-bottom:none}}
+            tr:hover td{{background:#fafafa}}
+            .badge{{display:inline-block;padding:3px 8px;border-radius:5px;font-size:0.68rem;font-weight:700;text-transform:uppercase}}
+            .badge.critical{{background:#fee2e2;color:#dc2626}}
+            .badge.warning{{background:#fef3c7;color:#d97706}}
+            .badge.ok{{background:#dcfce7;color:#16a34a}}
+            .score-bar{{background:#f0f0f0;border-radius:99px;height:8px;margin-top:8px}}
+            .score-fill{{height:8px;border-radius:99px;background:linear-gradient(90deg,#2563eb,#7c3aed)}}
+            .footer{{text-align:center;font-size:0.75rem;color:#9ca3af;margin-top:32px}}
+          </style>
+          </head>
+          <body>
+          <div class="header">
+            <h1>🛡️ CodeWatch AI — Rapport de sécurité</h1>
+            <p>Commit : {report_data['commit']} &nbsp;·&nbsp; Branche : {report_data['branch']} &nbsp;·&nbsp; Run #{report_data['run_date']}</p>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi blue"><div class="kpi-val">{global_score}</div><div class="kpi-label">Score global /100</div>
+              <div class="score-bar"><div class="score-fill" style="width:{global_score}%"></div></div></div>
+            <div class="kpi {'green' if total_files > 0 else 'yellow'}"><div class="kpi-val">{total_files}</div><div class="kpi-label">Fichiers analysés</div></div>
+            <div class="kpi {'red' if total_issues > 20 else 'yellow'}"><div class="kpi-val">{total_issues}</div><div class="kpi-label">Issues totales</div></div>
+            <div class="kpi {'red' if len(critical_files) > 0 else 'green'}"><div class="kpi-val">{len(critical_files)}</div><div class="kpi-label">Fichiers critiques</div></div>
+          </div>
+          <div class="card">
+            <h2>📋 Détail par fichier</h2>
+            <table>
+              <thead><tr><th>Fichier</th><th>Total</th><th>Pylint</th><th>Bandit</th><th>Semgrep</th><th>Statut</th></tr></thead>
+              <tbody>
+          """
+          for item in report_data["details"]:
+              issues = item["issues"]
+              if issues > threshold:
+                  status = '<span class="badge critical">Critique</span>'
+              elif issues > threshold // 2:
+                  status = '<span class="badge warning">Attention</span>'
+              else:
+                  status = '<span class="badge ok">OK</span>'
+              html += f'<tr><td><code>{item["file"]}</code></td><td><strong>{issues}</strong></td><td>{item["pylint"]}</td><td>{item["bandit"]}</td><td>{item["semgrep"]}</td><td>{status}</td></tr>\n'
+
+          html += f"""
+              </tbody>
+            </table>
+          </div>
+          <div class="footer">
+            Généré automatiquement par <strong>CodeWatch AI</strong> — Kawther BOUZEROUATA · ENPO-MA 2026<br>
+            Pylint · Bandit · Semgrep · Qwen2.5-Coder 14B
+          </div>
+          </body></html>"""
+
+          with open("docs/index.html", "w", encoding="utf-8") as f:
+              f.write(html)
+
+          print(f"\n=== RÉSUMÉ ===")
+          print(f"Fichiers analysés : {total_files}")
+          print(f"Total issues      : {total_issues}")
+          print(f"Score global      : {global_score}/100 ({badge_label})")
+          print(f"Fichiers critiques: {len(critical_files)}")
+          print(f"Alerte seuil      : {alert}")
+          print("Rapport HTML généré dans docs/index.html")
+          PYEOF
+
+      # ── Commenter la Pull Request ──
+      - name: Commentaire PR avec résultats
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCORE:        ${{ steps.codewatch.outputs.global_score }}
+          FILES:        ${{ steps.codewatch.outputs.total_files }}
+          ISSUES:       ${{ steps.codewatch.outputs.total_issues }}
+          AVG:          ${{ steps.codewatch.outputs.avg_issues }}
+          CRITICAL:     ${{ steps.codewatch.outputs.critical_count }}
+          COLOR:        ${{ steps.codewatch.outputs.badge_color }}
+          LABEL:        ${{ steps.codewatch.outputs.badge_label }}
+          PR_NUMBER:    ${{ github.event.pull_request.number }}
+          REPO:         ${{ github.repository }}
+        run: |
+          python3 << 'PYEOF'
+          import os, requests, json
+
+          token      = os.environ["GITHUB_TOKEN"]
+          score      = os.environ["SCORE"]
+          files      = os.environ["FILES"]
+          issues     = os.environ["ISSUES"]
+          avg        = os.environ["AVG"]
+          critical   = os.environ["CRITICAL"]
+          label      = os.environ["LABEL"]
+          pr_number  = os.environ["PR_NUMBER"]
+          repo       = os.environ["REPO"]
+
+          # Emoji selon score
+          score_int = int(score)
+          if score_int >= 80:
+              emoji = "🟢"
+          elif score_int >= 60:
+              emoji = "🟡"
+          elif score_int >= 40:
+              emoji = "🟠"
+          else:
+              emoji = "🔴"
+
+          body = f"""## 🛡️ CodeWatch AI — Rapport d'analyse automatique
+
+          {emoji} **Score de sécurité global : {score}/100** (`{label}`)
+
+          | Métrique | Valeur |
+          |---|---|
+          | 📁 Fichiers analysés | `{files}` |
+          | 🔍 Issues totales | `{issues}` |
+          | 📊 Moyenne / fichier | `{avg}` |
+          | ⚠️ Fichiers critiques | `{critical}` |
+
+          > Analyse effectuée avec **Pylint**, **Bandit**, **Semgrep** et **Qwen2.5-Coder 14B**
+          > 
+          > 📄 [Voir le rapport complet](https://bkaw47118-cyber.github.io/codewatch-ai/)
+
+          ---
+          *CodeWatch AI · ENPO-MA 2026 · Kawther BOUZEROUATA*
+          """
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28"
+          }
+          url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+          resp = requests.post(url, headers=headers, json={"body": body})
+          if resp.status_code == 201:
+              print(f"Commentaire PR #{pr_number} posté avec succès")
+          else:
+              print(f"Erreur commentaire: {resp.status_code} — {resp.text}")
+          PYEOF
+
+      # ── Alerte si score critique ──
+      - name: Alerte seuil critique
+        if: steps.codewatch.outputs.alert == 'true'
+        run: |
+          echo "⚠️  ALERTE : Des fichiers dépassent le seuil de sécurité !"
+          echo "Score : ${{ steps.codewatch.outputs.global_score }}/100"
+          echo "Fichiers critiques : ${{ steps.codewatch.outputs.critical_count }}"
+          echo "::warning title=CodeWatch AI — Alerte sécurité::Score ${{ steps.codewatch.outputs.global_score }}/100 — ${{ steps.codewatch.outputs.critical_count }} fichier(s) critique(s) détecté(s)"
+
+      # ── Mettre à jour le README avec badge dynamique ──
+      - name: Mise à jour badge README
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCORE:        ${{ steps.codewatch.outputs.global_score }}
+          COLOR:        ${{ steps.codewatch.outputs.badge_color }}
+          LABEL:        ${{ steps.codewatch.outputs.badge_label }}
+          ISSUES:       ${{ steps.codewatch.outputs.total_issues }}
+        run: |
+          python3 << 'PYEOF'
+          import os, re
+
+          score  = os.environ["SCORE"]
+          color  = os.environ["COLOR"]
+          label  = os.environ["LABEL"]
+          issues = os.environ["ISSUES"]
+
+          badge_security = f"![Security Score](https://img.shields.io/badge/security%20score-{score}%2F100-{color}?style=flat-square&logo=shield)"
+          badge_issues   = f"![Issues](https://img.shields.io/badge/issues-{issues}-{'red' if int(issues)>20 else 'orange'}?style=flat-square)"
+          badge_tools    = "![Tools](https://img.shields.io/badge/tools-Pylint%20%7C%20Bandit%20%7C%20Semgrep-blue?style=flat-square)"
+          badge_model    = "![Model](https://img.shields.io/badge/LLM-Qwen2.5--Coder%2014B-purple?style=flat-square)"
+
+          badges_block = f"""<!-- CODEWATCH-BADGES-START -->
+          {badge_security} {badge_issues} {badge_tools} {badge_model}
+          <!-- CODEWATCH-BADGES-END -->"""
+
           try:
-              data = json.load(sys.stdin)
-              print(f'Fichier: {data[\"filename\"]}')
-              print(f'Total issues: {data[\"sast_results\"][\"total_issues\"]}')
-              print('---')
-          except:
-              print('Analyse ignorée')
-          " || true
-          done
+              with open("README.md", "r", encoding="utf-8") as f:
+                  content = f.read()
+
+              # Remplacer le bloc badges s'il existe, sinon l'insérer après le titre
+              if "<!-- CODEWATCH-BADGES-START -->" in content:
+                  content = re.sub(
+                      r"<!-- CODEWATCH-BADGES-START -->.*?<!-- CODEWATCH-BADGES-END -->",
+                      badges_block,
+                      content,
+                      flags=re.DOTALL
+                  )
+              else:
+                  # Insérer après la première ligne (titre)
+                  lines = content.split("\n")
+                  lines.insert(1, "\n" + badges_block + "\n")
+                  content = "\n".join(lines)
+
+              with open("README.md", "w", encoding="utf-8") as f:
+                  f.write(content)
+
+              print(f"README.md mis à jour — Score: {score}/100, Issues: {issues}")
+          except FileNotFoundError:
+              print("README.md non trouvé, création...")
+              with open("README.md", "w") as f:
+                  f.write(f"# CodeWatch AI\n\n{badges_block}\n\nPlateforme intelligente de revue automatique de code Python.\n")
+          PYEOF
+
+      # ── Commit docs/ + README mis à jour ──
+      - name: Commit rapport GitHub Pages + badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name  "CodeWatch AI Bot"
+          git config user.email "bkaw47118@gmail.com"
+          git add docs/ README.md
+          git diff --staged --quiet || git commit -m "bot: mise à jour rapport sécurité — run #${{ github.run_number }}"
+          git push
