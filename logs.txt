@@ -1,0 +1,119 @@
+nohup: ignoring input
+INFO:     Started server process [1596896]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+Chargement de Qwen2.5-Coder en mémoire...
+Modèle prêt.
+INFO:     105.235.137.112:38472 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:0 - "GET /history HTTP/1.1" 200 OK
+INFO:     105.235.137.112:47143 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:0 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37000 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     105.235.137.112:45672 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:45112 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:35652 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:33081 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:46346 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:46346 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     105.235.137.112:44826 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:44826 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     105.235.137.112:44826 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:44826 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     105.235.137.112:44826 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:44826 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     105.235.137.112:35350 - "GET / HTTP/1.1" 200 OK
+INFO:     3.87.27.156:43251 - "GET /ecosystem.config.js HTTP/1.0" 404 Not Found
+INFO:     105.235.137.112:39749 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:39749 - "GET /history HTTP/1.1" 200 OK
+INFO:     105.235.137.112:39749 - "GET /dashboard HTTP/1.1" 200 OK
+INFO:     23.22.183.111:19280 - "GET /health HTTP/1.1" 200 OK
+INFO:     105.235.137.112:35194 - "POST /compare HTTP/1.1" 200 OK
+INFO:     105.235.137.112:46346 - "GET / HTTP/1.1" 200 OK
+INFO:     105.235.137.112:46346 - "GET /history HTTP/1.1" 200 OK
+INFO:     135.232.224.164:34856 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     64.236.135.136:24640 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     87.106.163.38:56730 - "GET /.env.old HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56696 - "GET /.env.local HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56682 - "GET /.env HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56708 - "GET /.env.backup HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56686 - "GET /.env.production HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56698 - "GET /.env.prod HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56722 - "GET /.env.bak HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56740 - "GET /.env.save HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56750 - "GET /.env.staging HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56752 - "GET /.env.dev HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56756 - "GET /config/.env HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56770 - "GET /backend/.env HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56786 - "GET /.env.example HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:56798 - "GET /.env.development HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:45178 - "GET /wp-config.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:45188 - "GET /wp-config.php.bak HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:45196 - "GET /wp-config.php.save HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:45202 - "GET /wp-config.php.old HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:45204 - "GET /wp-config.php.orig HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:45208 - "GET /docker-compose.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44448 - "GET /docker-compose.prod.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44456 - "GET /docker-compose.override.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44472 - "GET /compose.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44486 - "GET /config/database.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44502 - "GET /config/database.yaml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44518 - "GET /config/secrets.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44534 - "GET /app/.env HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44550 - "GET /api/.env HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:43846 - "GET /web/.env HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:43854 - "GET /.env.production.local HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:43874 - "GET /app/etc/env.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:43888 - "GET /sites/default/settings.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:43894 - "GET /include/config.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:43896 - "GET /includes/config.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:39690 - "GET /application/config/database.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:39692 - "GET /conf/config.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:39706 - "GET /config/app.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:39726 - "GET /.mcp/settings.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:39742 - "GET /.cursor/mcp.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:39748 - "GET /.cursor/mcp_config.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49448 - "GET /.claude/config.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49458 - "GET /claude_desktop_config.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49452 - "GET /.claude/mcp.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49468 - "GET /.config/claude/config.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49482 - "GET /.vscode/mcp.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49498 - "GET /mcp_config.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49510 - "GET /config/mcp.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49526 - "GET /api/v4/projects?visibility=public&per_page=20 HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49528 - "GET /api/v4/snippets?visibility=public HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49544 - "GET /explore/projects HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49556 - "GET /explore/snippets HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49570 - "GET /-/snippets HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:49586 - "GET /users/sign_in HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48366 - "GET /gitlab-ci.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48368 - "GET /.gitlab-ci.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48396 - "GET /gitlab/config/database.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48380 - "GET /gitlab/config/secrets.yml HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48410 - "GET /gitlab-secrets.json HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48414 - "GET /.kube/config HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48418 - "GET /kubeconfig HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:48432 - "GET /config/kubeconfig HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44556 - "GET /actuator/env HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44562 - "GET /debug/vars HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44588 - "GET /phpinfo.php HTTP/1.1" 404 Not Found
+INFO:     87.106.163.38:44578 - "GET /info.php HTTP/1.1" 404 Not Found
+INFO:     135.232.224.164:34859 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     64.236.135.136:24642 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     135.232.224.164:34856 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     64.236.135.136:24641 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     135.232.224.164:34857 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     64.236.135.136:24640 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     64.236.135.136:24642 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     135.232.224.164:34856 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     64.236.135.136:24643 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     135.232.224.164:34859 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     64.236.135.136:24640 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5136 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5138 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5136 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5137 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5138 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5139 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5140 - "POST /analyze HTTP/1.1" 200 OK
+INFO:     48.217.108.242:5136 - "POST /analyze HTTP/1.1" 200 OK

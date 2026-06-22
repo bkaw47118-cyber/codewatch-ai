@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeWatch AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #ffffff;
+    color: #0d0d0d;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 260px;
+    background: #f9f9f9;
+    border-right: 1px solid #e5e5e5;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .logo-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0d0d0d;
+  }
+
+  .new-analysis-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #444;
+    border: 1px solid #e5e5e5;
+    background: white;
+    margin-bottom: 16px;
+    transition: background 0.15s;
+  }
+
+  .new-analysis-btn:hover { background: #f0f0f0; }
+
+  .sidebar-section-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0 10px;
+    margin-bottom: 6px;
+  }
+
+  .history-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: #444;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.15s;
+  }
+
+  .history-item:hover { background: #efefef; }
+  .history-item.active { background: #efefef; color: #0d0d0d; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px 10px;
+    border-top: 1px solid #e5e5e5;
+    font-size: 0.75rem;
+    color: #999;
+    line-height: 1.8;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* État initial (pas encore d'analyse) */
+  .welcome-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 40px;
+  }
+
+  .welcome-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #0d0d0d;
+    text-align: center;
+  }
+
+  .welcome-subtitle {
+    font-size: 0.9rem;
+    color: #999;
+    text-align: center;
+    margin-top: -20px;
+  }
+
+  /* Zone de drop */
+  .drop-zone {
+    width: 100%;
+    max-width: 560px;
+    border: 2px dashed #d1d5db;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafafa;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    color: #d1d5db;
+  }
+
+  .drop-text {
+    font-size: 0.9rem;
+    color: #6b7280;
+  }
+
+  .drop-text strong { color: #2563eb; }
+
+  .drop-hint {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 8px;
+  }
+
+  .analyze-btn {
+    padding: 12px 32px;
+    background: #0d0d0d;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: none;
+  }
+
+  .analyze-btn:hover { background: #333; }
+  .analyze-btn.visible { display: inline-block; }
+
+  /* ── RÉSULTATS ── */
+  .results-screen {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .results-screen.visible {
+    display: flex;
+  }
+
+  .results-header {
+    padding: 20px 32px;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .results-filename {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0d0d0d;
+  }
+
+  .results-meta {
+    font-size: 0.78rem;
+    color: #999;
+    margin-top: 2px;
+  }
+
+  .results-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Métriques */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .metric-card {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 16px 20px;
+    border-top: 3px solid transparent;
+  }
+
+  .metric-card.total { border-top-color: #ef4444; }
+  .metric-card.pylint { border-top-color: #f59e0b; }
+  .metric-card.bandit { border-top-color: #ef4444; }
+  .metric-card.semgrep { border-top-color: #8b5cf6; }
+
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .metric-card.total .metric-value { color: #ef4444; }
+  .metric-card.pylint .metric-value { color: #f59e0b; }
+  .metric-card.bandit .metric-value { color: #ef4444; }
+  .metric-card.semgrep .metric-value { color: #8b5cf6; }
+
+  .metric-name {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Section */
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 12px;
+  }
+
+  .tab {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+    color: #999;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    color: #0d0d0d;
+    border-bottom-color: #0d0d0d;
+    font-weight: 500;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Issue item */
+  .issue {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    margin-bottom: 6px;
+  }
+
+  .issue-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .badge-high { background: #fee2e2; color: #dc2626; }
+  .badge-medium { background: #fef3c7; color: #d97706; }
+  .badge-low { background: #dbeafe; color: #2563eb; }
+  .badge-convention { background: #f3f4f6; color: #6b7280; }
+  .badge-error { background: #fee2e2; color: #dc2626; }
+  .badge-warning { background: #fef3c7; color: #d97706; }
+
+  .issue-line {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.72rem;
+    color: #9ca3af;
+    min-width: 45px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .issue-text {
+    font-size: 0.83rem;
+    color: #374151;
+    line-height: 1.4;
+  }
+
+  .issue-symbol {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+
+  .no-issues {
+    font-size: 0.83rem;
+    color: #16a34a;
+    padding: 12px 14px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    border: 1px solid #bbf7d0;
+  }
+
+  /* Rapport LLM */
+  .report-box {
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: #374151;
+  }
+
+  .report-box h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0d0d0d;
+    margin: 16px 0 8px 0;
+  }
+
+  .report-box h3:first-child { margin-top: 0; }
+
+  .report-box code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #1f2937;
+  }
+
+  .report-box pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    overflow-x: auto;
+    margin: 8px 0;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    line-height: 1.6;
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .loading.visible { display: flex; }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e5e5e5;
+    border-top-color: #0d0d0d;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 0.85rem;
+    color: #999;
+  }
+
+  .loading-steps {
+    font-size: 0.78rem;
+    color: #bbb;
+    text-align: center;
+    line-height: 2;
+  }
+
+  /* New analysis button in header */
+  .new-btn {
+    padding: 7px 16px;
+    background: #0d0d0d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .new-btn:hover { background: #333; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">C</div>
+    <span class="logo-text">CodeWatch AI</span>
+  </div>
+
+  
+<button class="new-analysis-btn" onclick="resetToWelcome()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Nouvelle analyse
+  </button>
+
+<button class="new-analysis-btn" onclick="showCompare()" style="margin-top:6px;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+  Comparer deux versions
+</button>
+
+  <div class="sidebar-section-title">Récent</div>
+  <div id="history-list"></div>
+
+  <div class="sidebar-footer">
+    Pylint · Bandit · Semgrep<br>
+    Qwen2.5-Coder 14B<br><br>
+    ENPO-MA — 2026<br>
+    Kawther BOUZEROUATA
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Écran d'accueil -->
+  <div class="welcome-screen" id="welcome-screen">
+    <div>
+      <div class="welcome-title">Que souhaitez-vous analyser ?</div>
+      <div class="welcome-subtitle" style="margin-top:8px;">Déposez un fichier Python pour démarrer l'analyse hybride</div>
+    </div>
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".py" onchange="onFileSelected(this)">
+      <div class="drop-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </div>
+      <div class="drop-text"><strong>Cliquez pour sélectionner</strong> ou glissez-déposez</div>
+      <div class="drop-hint">Fichiers .py uniquement</div>
+    </div>
+
+    <div id="file-info" style="font-size:0.82rem; color:#6b7280; display:none;"></div>
+    <button class="analyze-btn" id="analyze-btn" onclick="startAnalysis()">Lancer l'analyse</button>
+  </div>
+
+<!-- Écran Comparaison -->
+<div class="welcome-screen" id="compare-screen" style="display:none;">
+  <div>
+    <div class="welcome-title">Comparer deux versions</div>
+    <div class="welcome-subtitle" style="margin-top:8px;">Mesurez l'amélioration de la qualité de votre code</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; max-width:700px;">
+    
+    <div>
+      <div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Version originale</div>
+      <div class="drop-zone" style="padding:24px;">
+        <input type="file" id="file-before" accept=".py" onchange="onBeforeSelected(this)">
+        <div style="font-size:0.85rem; color:#9ca3af;">Fichier avant correction</div>
+        <div id="before-name" style="font-size:0.78rem; color:#2563eb; margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Version corrigée</div>
+      <div class="drop-zone" style="padding:24px;">
+        <input type="file" id="file-after" accept=".py" onchange="onAfterSelected(this)">
+        <div style="font-size:0.85rem; color:#9ca3af;">Fichier après correction</div>
+        <div id="after-name" style="font-size:0.78rem; color:#2563eb; margin-top:6px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="analyze-btn" id="compare-btn" onclick="startCompare()" style="display:none;">Lancer la comparaison</button>
+</div>
+
+<!-- Résultats Comparaison -->
+<div class="results-screen" id="compare-results-screen">
+  <div class="results-header">
+    <div>
+      <div class="results-filename">Rapport de comparaison</div>
+      <div class="results-meta" id="compare-meta"></div>
+    </div>
+    <button class="new-btn" onclick="showCompare()">Nouvelle comparaison</button>
+  </div>
+
+  <div class="results-body">
+
+    <!-- Amélioration globale -->
+    <div class="metrics-row">
+      <div class="metric-card total">
+        <div class="metric-value" id="c-before">0</div>
+        <div class="metric-name">Issues avant</div>
+      </div>
+      <div class="metric-card semgrep">
+        <div class="metric-value" id="c-after">0</div>
+        <div class="metric-name">Issues après</div>
+      </div>
+      <div class="metric-card pylint">
+        <div class="metric-value" id="c-resolved">0</div>
+        <div class="metric-name">Résolues</div>
+      </div>
+      <div class="metric-card bandit">
+        <div class="metric-value" id="c-pct">0%</div>
+        <div class="metric-name">Amélioration</div>
+      </div>
+    </div>
+
+    <!-- Rapport LLM -->
+    <div class="section">
+      <div class="section-label">Rapport de comparaison — Qwen2.5-Coder 14B</div>
+      <div class="report-box" id="compare-report"></div>
+    </div>
+
+  </div>
+</div>  
+<!-- Loading -->
+  <div class="loading" id="loading-screen">
+    <div class="spinner"></div>
+    <div class="loading-text">Analyse en cours...</div>
+    <div class="loading-steps" id="loading-steps">
+      Lancement des outils SAST...<br>
+      Pylint · Bandit · Semgrep
+    </div>
+  </div>
+
+  <!-- Résultats -->
+  <div class="results-screen" id="results-screen">
+    <div class="results-header">
+      <div>
+        <div class="results-filename" id="result-filename"></div>
+        <div class="results-meta" id="result-meta"></div>
+      </div>
+      <button class="new-btn" onclick="resetToWelcome()">Nouvelle analyse</button>
+    </div>
+
+    <div class="results-body">
+
+      <!-- Métriques -->
+      <div class="metrics-row">
+        <div class="metric-card total">
+          <div class="metric-value" id="m-total">0</div>
+          <div class="metric-name">Total issues</div>
+        </div>
+        <div class="metric-card pylint">
+          <div class="metric-value" id="m-pylint">0</div>
+          <div class="metric-name">Pylint</div>
+        </div>
+        <div class="metric-card bandit">
+          <div class="metric-value" id="m-bandit">0</div>
+          <div class="metric-name">Bandit</div>
+        </div>
+        <div class="metric-card semgrep">
+          <div class="metric-value" id="m-semgrep">0</div>
+          <div class="metric-name">Semgrep</div>
+        </div>
+      </div>
+
+      <!-- SAST détails -->
+      <div class="section">
+        <div class="section-label">Analyse statique</div>
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab('pylint')">Pylint</div>
+          <div class="tab" onclick="switchTab('bandit')">Bandit</div>
+          <div class="tab" onclick="switchTab('semgrep')">Semgrep</div>
+        </div>
+        <div class="tab-content active" id="tab-pylint"></div>
+        <div class="tab-content" id="tab-bandit"></div>
+        <div class="tab-content" id="tab-semgrep"></div>
+      </div>
+
+      <!-- Rapport LLM -->
+      <div class="section">
+        <div class="section-label">Rapport IA — Qwen2.5-Coder 14B</div>
+        <div class="report-box" id="llm-report"></div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API_URL = 'https://pour-obvious-centres-enabled.trycloudflare.com';
+let analysisHistory = [];
+
+// Charger l'historique depuis le serveur au démarrage
+async function loadHistoryFromServer() {
+  try {
+    const response = await fetch(`${API_URL}/history`);
+    const data = await response.json();
+    analysisHistory = data;
+    updateHistory();
+  } catch (err) {
+    console.log('Historique non disponible');
+  }
+}
+
+// Drag & drop
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.py')) handleFile(file);
+});
+
+function onFileSelected(input) {
+  if (input.files[0]) handleFile(input.files[0]);
+}
+
+function handleFile(file) {
+  selectedFile = file;
+  document.getElementById('file-info').style.display = 'block';
+  document.getElementById('file-info').textContent = file.name + ' · ' + file.size + ' bytes';
+  document.getElementById('analyze-btn').classList.add('visible');
+}
+
+let selectedFile = null;
+
+async function startAnalysis() {
+  if (!selectedFile) return;
+
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('loading-screen').classList.add('visible');
+  document.getElementById('results-screen').classList.remove('visible');
+
+  const steps = document.getElementById('loading-steps');
+  setTimeout(() => { steps.innerHTML = 'Lancement Pylint...<br>Analyse de la qualité du code'; }, 1000);
+  setTimeout(() => { steps.innerHTML = 'Lancement Bandit...<br>Détection des vulnérabilités'; }, 3000);
+  setTimeout(() => { steps.innerHTML = 'Lancement Semgrep...<br>Analyse des patterns dangereux'; }, 5000);
+  setTimeout(() => { steps.innerHTML = 'Envoi au LLM Qwen2.5-Coder 14B...<br>Génération du rapport enrichi'; }, 7000);
+
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    const response = await fetch(`${API_URL}/analyze`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+
+    // Ajouter en tête de l'historique
+    analysisHistory.unshift(data);
+    updateHistory();
+    showResults(data);
+
+  } catch (err) {
+    document.getElementById('loading-screen').classList.remove('visible');
+    document.getElementById('welcome-screen').style.display = 'flex';
+    alert('Erreur de connexion : ' + err.message);
+  }
+}
+
+function showResults(data) {
+  const sast = data.sast_results;
+  const summary = sast.summary;
+
+  document.getElementById('m-total').textContent = sast.total_issues;
+  document.getElementById('m-pylint').textContent = summary.pylint_count;
+  document.getElementById('m-bandit').textContent = summary.bandit_count;
+  document.getElementById('m-semgrep').textContent = summary.semgrep_count;
+
+  document.getElementById('result-filename').textContent = data.filename;
+  document.getElementById('result-meta').textContent =
+    summary.pylint_count + ' Pylint · ' +
+    summary.bandit_count + ' Bandit · ' +
+    summary.semgrep_count + ' Semgrep' +
+    (data.created_at ? ' · ' + data.created_at : '');
+
+  // Pylint
+  const pylintEl = document.getElementById('tab-pylint');
+  if (!sast.pylint || sast.pylint.length === 0) {
+    pylintEl.innerHTML = '<div class="no-issues">Aucun problème détecté.</div>';
+  } else {
+    pylintEl.innerHTML = sast.pylint.map(i => {
+      if (i.error) return '';
+      const type = i.type || 'convention';
+      const bc = type === 'error' ? 'badge-error' : type === 'warning' ? 'badge-warning' : 'badge-convention';
+      return `<div class="issue">
+        <span class="issue-badge ${bc}">${type}</span>
+        <span class="issue-line">L.${i.line}</span>
+        <div><div class="issue-text">${i.message}</div><div class="issue-symbol">${i.symbol}</div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Bandit
+  const banditEl = document.getElementById('tab-bandit');
+  if (!sast.bandit || sast.bandit.length === 0) {
+    banditEl.innerHTML = '<div class="no-issues">Aucune vulnérabilité détectée.</div>';
+  } else {
+    banditEl.innerHTML = sast.bandit.map(i => {
+      if (i.error) return '';
+      const sev = i.severity || 'LOW';
+      const bc = sev === 'HIGH' ? 'badge-high' : sev === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+      return `<div class="issue">
+        <span class="issue-badge ${bc}">${sev}</span>
+        <span class="issue-line">L.${i.line}</span>
+        <div><div class="issue-text">${i.message}</div><div class="issue-symbol">Confiance : ${i.confidence}</div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Semgrep
+  const semgrepEl = document.getElementById('tab-semgrep');
+  if (!sast.semgrep || sast.semgrep.length === 0) {
+    semgrepEl.innerHTML = '<div style="font-size:0.83rem;color:#6b7280;padding:12px 14px;">Aucun pattern dangereux détecté.</div>';
+  } else {
+    semgrepEl.innerHTML = sast.semgrep.map(i => {
+      if (i.error) return '';
+      return `<div class="issue">
+        <span class="issue-badge badge-high">${i.severity || 'N/A'}</span>
+        <span class="issue-line">L.${i.line}</span>
+        <div><div class="issue-text">${i.message}</div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Rapport LLM
+  let report = data.llm_report
+    .replace(/###\s(.+)/g, '<h3>$1</h3>')
+    .replace(/##\s(.+)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/```python([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+
+  document.getElementById('llm-report').innerHTML = report;
+
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('results-screen').classList.add('visible');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['pylint', 'bandit', 'semgrep'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function updateHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = analysisHistory.slice(0, 15).map((h, i) =>
+    `<div class="history-item" id="hist-${i}" onclick="loadHistory(${i})">
+      <div style="font-size:0.82rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.filename}</div>
+      <div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">${h.created_at || ''} · ${h.total_issues || h.sast_results?.total_issues || 0} issues</div>
+    </div>`
+  ).join('');
+  setActiveHistory(0);
+}
+
+function setActiveHistory(index) {
+  document.querySelectorAll('.history-item').forEach(h => h.classList.remove('active'));
+  const el = document.getElementById('hist-' + index);
+  if (el) el.classList.add('active');
+}
+
+function loadHistory(index) {
+  setActiveHistory(index);
+  showResults(analysisHistory[index]);
+}
+
+function resetToWelcome() {
+  selectedFile = null;
+  document.getElementById('welcome-screen').style.display = 'flex';
+  document.getElementById('results-screen').classList.remove('visible');
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('analyze-btn').classList.remove('visible');
+  document.getElementById('file-info').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.querySelectorAll('.history-item').forEach(h => h.classList.remove('active'));
+}
+
+
+// ============================================================
+// COMPARE
+// ============================================================
+let fileBefore = null;
+let fileAfter = null;
+
+function showCompare() {
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('results-screen').classList.remove('visible');
+  document.getElementById('compare-results-screen').classList.remove('visible');
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('compare-screen').style.display = 'flex';
+}
+
+function onBeforeSelected(input) {
+  fileBefore = input.files[0];
+  document.getElementById('before-name').textContent = fileBefore.name;
+  checkCompareReady();
+}
+
+function onAfterSelected(input) {
+  fileAfter = input.files[0];
+  document.getElementById('after-name').textContent = fileAfter.name;
+  checkCompareReady();
+}
+
+function checkCompareReady() {
+  const btn = document.getElementById('compare-btn');
+  if (fileBefore && fileAfter) {
+    btn.style.display = 'inline-block';
+  }
+}
+
+async function startCompare() {
+  document.getElementById('compare-screen').style.display = 'none';
+  document.getElementById('loading-screen').classList.add('visible');
+
+  const steps = document.getElementById('loading-steps');
+  setTimeout(() => { steps.innerHTML = 'Analyse de la version originale...<br>Pylint · Bandit · Semgrep'; }, 1000);
+  setTimeout(() => { steps.innerHTML = 'Analyse de la version corrigée...<br>Pylint · Bandit · Semgrep'; }, 4000);
+  setTimeout(() => { steps.innerHTML = 'Génération du rapport comparatif...<br>Qwen2.5-Coder 14B'; }, 7000);
+
+  try {
+    const formData = new FormData();
+    formData.append('file_before', fileBefore);
+    formData.append('file_after', fileAfter);
+
+    const response = await fetch(`${API_URL}/compare`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+    showCompareResults(data);
+
+  } catch (err) {
+    document.getElementById('loading-screen').classList.remove('visible');
+    document.getElementById('compare-screen').style.display = 'flex';
+    alert('Erreur : ' + err.message);
+  }
+}
+
+function showCompareResults(data) {
+  const imp = data.improvement;
+
+  document.getElementById('c-before').textContent = imp.before_total;
+  document.getElementById('c-after').textContent = imp.after_total;
+  document.getElementById('c-resolved').textContent = imp.issues_resolved;
+  document.getElementById('c-pct').textContent = imp.improvement_pct + '%';
+
+  document.getElementById('compare-meta').textContent =
+    imp.before_total + ' issues → ' + imp.after_total + ' issues · ' +
+    imp.improvement_pct + '% d\'amélioration';
+
+  let report = data.llm_report
+    .replace(/###\s(.+)/g, '<h3>$1</h3>')
+    .replace(/##\s(.+)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/```python([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+
+  document.getElementById('compare-report').innerHTML = report;
+
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('compare-results-screen').classList.add('visible');
+}
+// Charger l'historique au démarrage
+loadHistoryFromServer();
+</script>
+</body>
+</html>
