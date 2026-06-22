@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CodeWatch AI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -65,11 +66,19 @@
     color: #444;
     border: 1px solid #e5e5e5;
     background: white;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
     transition: background 0.15s;
+    width: 100%;
+    text-align: left;
   }
 
   .new-analysis-btn:hover { background: #f0f0f0; }
+  .new-analysis-btn.active-nav {
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #2563eb;
+  }
+  .new-analysis-btn.active-nav svg { stroke: #2563eb; }
 
   .sidebar-section-title {
     font-size: 0.7rem;
@@ -79,6 +88,7 @@
     letter-spacing: 0.5px;
     padding: 0 10px;
     margin-bottom: 6px;
+    margin-top: 8px;
   }
 
   .history-item {
@@ -113,14 +123,13 @@
     overflow: hidden;
   }
 
-  /* État initial (pas encore d'analyse) */
   .welcome-screen {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 32px;
+    gap: 28px;
     padding: 40px;
   }
 
@@ -135,10 +144,61 @@
     font-size: 0.9rem;
     color: #999;
     text-align: center;
-    margin-top: -20px;
+    margin-top: 8px;
   }
 
-  /* Zone de drop */
+  /* Mode selector */
+  .mode-selector {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .mode-card {
+    flex: 1;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    text-align: left;
+  }
+
+  .mode-card:hover { border-color: #2563eb; background: #eff6ff; }
+  .mode-card.selected { border-color: #2563eb; background: #eff6ff; }
+  .mode-card.selected.pro { border-color: #7c3aed; background: #f5f3ff; }
+
+  .mode-card-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #0d0d0d;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mode-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-standard { background: #dbeafe; color: #2563eb; }
+  .badge-pro { background: #ede9fe; color: #7c3aed; }
+
+  .mode-card-desc {
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.5;
+  }
+
+  /* Drop zone */
   .drop-zone {
     width: 100%;
     max-width: 560px;
@@ -166,24 +226,10 @@
     height: 100%;
   }
 
-  .drop-icon {
-    font-size: 2.5rem;
-    margin-bottom: 12px;
-    color: #d1d5db;
-  }
-
-  .drop-text {
-    font-size: 0.9rem;
-    color: #6b7280;
-  }
-
+  .drop-icon { font-size: 2.5rem; margin-bottom: 12px; color: #d1d5db; }
+  .drop-text { font-size: 0.9rem; color: #6b7280; }
   .drop-text strong { color: #2563eb; }
-
-  .drop-hint {
-    font-size: 0.75rem;
-    color: #9ca3af;
-    margin-top: 8px;
-  }
+  .drop-hint { font-size: 0.75rem; color: #9ca3af; margin-top: 8px; }
 
   .analyze-btn {
     padding: 12px 32px;
@@ -200,8 +246,9 @@
 
   .analyze-btn:hover { background: #333; }
   .analyze-btn.visible { display: inline-block; }
+  .analyze-btn.pro-mode { background: linear-gradient(135deg, #2563eb, #7c3aed); }
 
-  /* ── RÉSULTATS ── */
+  /* Results */
   .results-screen {
     flex: 1;
     display: none;
@@ -209,9 +256,7 @@
     overflow: hidden;
   }
 
-  .results-screen.visible {
-    display: flex;
-  }
+  .results-screen.visible { display: flex; }
 
   .results-header {
     padding: 20px 32px;
@@ -225,13 +270,12 @@
     font-size: 0.9rem;
     font-weight: 600;
     color: #0d0d0d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  .results-meta {
-    font-size: 0.78rem;
-    color: #999;
-    margin-top: 2px;
-  }
+  .results-meta { font-size: 0.78rem; color: #999; margin-top: 2px; }
 
   .results-body {
     flex: 1;
@@ -242,7 +286,6 @@
     gap: 24px;
   }
 
-  /* Métriques */
   .metrics-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -261,17 +304,16 @@
   .metric-card.pylint { border-top-color: #f59e0b; }
   .metric-card.bandit { border-top-color: #ef4444; }
   .metric-card.semgrep { border-top-color: #8b5cf6; }
+  .metric-card.score { border-top-color: #10b981; }
+  .metric-card.analyses { border-top-color: #2563eb; }
 
-  .metric-value {
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
+  .metric-value { font-size: 2rem; font-weight: 700; line-height: 1; }
   .metric-card.total .metric-value { color: #ef4444; }
   .metric-card.pylint .metric-value { color: #f59e0b; }
   .metric-card.bandit .metric-value { color: #ef4444; }
   .metric-card.semgrep .metric-value { color: #8b5cf6; }
+  .metric-card.score .metric-value { color: #10b981; }
+  .metric-card.analyses .metric-value { color: #2563eb; }
 
   .metric-name {
     font-size: 0.75rem;
@@ -281,12 +323,7 @@
     letter-spacing: 0.5px;
   }
 
-  /* Section */
-  .section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+  .section { display: flex; flex-direction: column; gap: 8px; }
 
   .section-label {
     font-size: 0.72rem;
@@ -296,9 +333,11 @@
     letter-spacing: 0.8px;
     padding-bottom: 8px;
     border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  /* Tabs */
   .tabs {
     display: flex;
     gap: 4px;
@@ -325,7 +364,6 @@
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  /* Issue item */
   .issue {
     display: flex;
     align-items: flex-start;
@@ -365,29 +403,10 @@
     margin-top: 2px;
   }
 
-  .issue-text {
-    font-size: 0.83rem;
-    color: #374151;
-    line-height: 1.4;
-  }
+  .issue-text { font-size: 0.83rem; color: #374151; line-height: 1.4; }
+  .issue-symbol { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+  .no-issues { font-size: 0.83rem; color: #16a34a; padding: 12px 14px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; }
 
-  .issue-symbol {
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 0.7rem;
-    color: #9ca3af;
-    margin-top: 2px;
-  }
-
-  .no-issues {
-    font-size: 0.83rem;
-    color: #16a34a;
-    padding: 12px 14px;
-    background: #f0fdf4;
-    border-radius: 8px;
-    border: 1px solid #bbf7d0;
-  }
-
-  /* Rapport LLM */
   .report-box {
     background: #fafafa;
     border: 1px solid #e5e5e5;
@@ -398,35 +417,12 @@
     color: #374151;
   }
 
-  .report-box h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #0d0d0d;
-    margin: 16px 0 8px 0;
-  }
+  .report-box.pro { border-color: #c4b5fd; background: #faf5ff; }
 
+  .report-box h3 { font-size: 0.95rem; font-weight: 600; color: #0d0d0d; margin: 16px 0 8px 0; }
   .report-box h3:first-child { margin-top: 0; }
-
-  .report-box code {
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    background: #f3f4f6;
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    color: #1f2937;
-  }
-
-  .report-box pre {
-    background: #1e1e1e;
-    color: #d4d4d4;
-    padding: 14px 16px;
-    border-radius: 8px;
-    font-size: 0.78rem;
-    overflow-x: auto;
-    margin: 8px 0;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    line-height: 1.6;
-  }
+  .report-box code { font-family: 'SF Mono', 'Fira Code', monospace; background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 0.8rem; color: #1f2937; }
+  .report-box pre { background: #1e1e1e; color: #d4d4d4; padding: 14px 16px; border-radius: 8px; font-size: 0.78rem; overflow-x: auto; margin: 8px 0; font-family: 'SF Mono', 'Fira Code', monospace; line-height: 1.6; }
 
   /* Loading */
   .loading {
@@ -449,21 +445,13 @@
     animation: spin 0.8s linear infinite;
   }
 
+  .spinner.pro { border-top-color: #7c3aed; }
+
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .loading-text {
-    font-size: 0.85rem;
-    color: #999;
-  }
+  .loading-text { font-size: 0.85rem; color: #999; }
+  .loading-steps { font-size: 0.78rem; color: #bbb; text-align: center; line-height: 2; }
 
-  .loading-steps {
-    font-size: 0.78rem;
-    color: #bbb;
-    text-align: center;
-    line-height: 2;
-  }
-
-  /* New analysis button in header */
   .new-btn {
     padding: 7px 16px;
     background: #0d0d0d;
@@ -476,7 +464,222 @@
   }
   .new-btn:hover { background: #333; }
 
-  /* Scrollbar */
+  /* ── DASHBOARD ── */
+  .dashboard-screen {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .dashboard-screen.visible { display: flex; }
+
+  .dashboard-header {
+    padding: 20px 32px;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .dashboard-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0d0d0d;
+  }
+
+  .dashboard-subtitle {
+    font-size: 0.78rem;
+    color: #999;
+    margin-top: 2px;
+  }
+
+  .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #444;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .refresh-btn:hover { background: #f0f0f0; }
+  .refresh-btn svg { transition: transform 0.4s; }
+  .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+
+  .dashboard-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* KPI row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .kpi-card {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 20px 20px 16px;
+    border-top: 3px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    opacity: 0.05;
+    transform: translate(20px, -20px);
+  }
+
+  .kpi-card.kpi-total { border-top-color: #2563eb; }
+  .kpi-card.kpi-total::after { background: #2563eb; }
+  .kpi-card.kpi-score { border-top-color: #10b981; }
+  .kpi-card.kpi-score::after { background: #10b981; }
+  .kpi-card.kpi-issues { border-top-color: #ef4444; }
+  .kpi-card.kpi-issues::after { background: #ef4444; }
+  .kpi-card.kpi-tools { border-top-color: #f59e0b; }
+  .kpi-card.kpi-tools::after { background: #f59e0b; }
+
+  .kpi-icon {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .kpi-card.kpi-total .kpi-value { color: #2563eb; }
+  .kpi-card.kpi-score .kpi-value { color: #10b981; }
+  .kpi-card.kpi-issues .kpi-value { color: #ef4444; }
+  .kpi-card.kpi-tools .kpi-value { color: #f59e0b; }
+
+  .kpi-label {
+    font-size: 0.75rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Charts row */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+
+  .chart-card {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+
+  .chart-card-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 200px;
+  }
+
+  /* Top files table */
+  .files-table {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .files-table-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto;
+    gap: 12px;
+    padding: 10px 20px;
+    background: white;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .files-table-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+    transition: background 0.1s;
+  }
+
+  .files-table-row:last-child { border-bottom: none; }
+  .files-table-row:hover { background: white; }
+
+  .file-name {
+    font-size: 0.83rem;
+    color: #374151;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-stat {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: right;
+    min-width: 40px;
+  }
+
+  .stat-total { color: #ef4444; }
+  .stat-pylint { color: #f59e0b; }
+  .stat-bandit { color: #dc2626; }
+  .stat-semgrep { color: #8b5cf6; }
+
+  .dash-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: #9ca3af;
+  }
+
+  .dash-empty-icon { font-size: 2.5rem; }
+  .dash-empty-text { font-size: 0.88rem; }
+
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 3px; }
@@ -491,9 +694,19 @@
     <span class="logo-text">CodeWatch AI</span>
   </div>
 
-  <button class="new-analysis-btn" onclick="resetToWelcome()">
+  <button class="new-analysis-btn" id="nav-analyze" onclick="resetToWelcome()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Nouvelle analyse
+  </button>
+
+  <button class="new-analysis-btn" id="nav-compare" onclick="showCompare()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    Comparer deux versions
+  </button>
+
+  <button class="new-analysis-btn" id="nav-dashboard" onclick="showDashboard()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard Manager
   </button>
 
   <div class="sidebar-section-title">Récent</div>
@@ -501,7 +714,8 @@
 
   <div class="sidebar-footer">
     Pylint · Bandit · Semgrep<br>
-    Qwen2.5-Coder 14B<br><br>
+    Qwen2.5-Coder 14B<br>
+    Mode Standard · Mode PRO<br><br>
     ENPO-MA — 2026<br>
     Kawther BOUZEROUATA
   </div>
@@ -514,7 +728,29 @@
   <div class="welcome-screen" id="welcome-screen">
     <div>
       <div class="welcome-title">Que souhaitez-vous analyser ?</div>
-      <div class="welcome-subtitle" style="margin-top:8px;">Déposez un fichier Python pour démarrer l'analyse hybride</div>
+      <div class="welcome-subtitle">Déposez un fichier Python et choisissez votre mode d'analyse</div>
+    </div>
+
+    <!-- Sélecteur de mode -->
+    <div class="mode-selector">
+      <div class="mode-card selected" id="card-standard" onclick="selectMode('standard')">
+        <div class="mode-card-title">
+          Mode Standard
+          <span class="mode-badge badge-standard">Standard</span>
+        </div>
+        <div class="mode-card-desc">
+          Qwen2.5-Coder 14B — analyse complète avec Pylint, Bandit et Semgrep. Rapport détaillé en français.
+        </div>
+      </div>
+      <div class="mode-card pro" id="card-pro" onclick="selectMode('pro')">
+        <div class="mode-card-title">
+          Mode PRO
+          <span class="mode-badge badge-pro">PRO</span>
+        </div>
+        <div class="mode-card-desc">
+          Prompt engineering spécialisé sécurité — score CVSS, mapping OWASP/CWE, proof of concept et plan de remédiation.
+        </div>
+      </div>
     </div>
 
     <div class="drop-zone" id="drop-zone">
@@ -530,17 +766,65 @@
     <button class="analyze-btn" id="analyze-btn" onclick="startAnalysis()">Lancer l'analyse</button>
   </div>
 
-  <!-- Loading -->
-  <div class="loading" id="loading-screen">
-    <div class="spinner"></div>
-    <div class="loading-text">Analyse en cours...</div>
-    <div class="loading-steps" id="loading-steps">
-      Lancement des outils SAST...<br>
-      Pylint · Bandit · Semgrep
+  <!-- Écran Comparaison -->
+  <div class="welcome-screen" id="compare-screen" style="display:none;">
+    <div>
+      <div class="welcome-title">Comparer deux versions</div>
+      <div class="welcome-subtitle" style="margin-top:8px;">Mesurez l'amélioration de la qualité de votre code</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; max-width:700px;">
+      <div>
+        <div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Version originale</div>
+        <div class="drop-zone" style="padding:24px;">
+          <input type="file" id="file-before" accept=".py" onchange="onBeforeSelected(this)">
+          <div style="font-size:0.85rem; color:#9ca3af;">Fichier avant correction</div>
+          <div id="before-name" style="font-size:0.78rem; color:#2563eb; margin-top:6px;"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Version corrigée</div>
+        <div class="drop-zone" style="padding:24px;">
+          <input type="file" id="file-after" accept=".py" onchange="onAfterSelected(this)">
+          <div style="font-size:0.85rem; color:#9ca3af;">Fichier après correction</div>
+          <div id="after-name" style="font-size:0.78rem; color:#2563eb; margin-top:6px;"></div>
+        </div>
+      </div>
+    </div>
+    <button class="analyze-btn" id="compare-btn" onclick="startCompare()" style="display:none;">Lancer la comparaison</button>
+  </div>
+
+  <!-- Résultats Comparaison -->
+  <div class="results-screen" id="compare-results-screen">
+    <div class="results-header">
+      <div>
+        <div class="results-filename">Rapport de comparaison</div>
+        <div class="results-meta" id="compare-meta"></div>
+      </div>
+      <button class="new-btn" onclick="showCompare()">Nouvelle comparaison</button>
+    </div>
+    <div class="results-body">
+      <div class="metrics-row">
+        <div class="metric-card total"><div class="metric-value" id="c-before">0</div><div class="metric-name">Issues avant</div></div>
+        <div class="metric-card semgrep"><div class="metric-value" id="c-after">0</div><div class="metric-name">Issues après</div></div>
+        <div class="metric-card pylint"><div class="metric-value" id="c-resolved">0</div><div class="metric-name">Résolues</div></div>
+        <div class="metric-card bandit"><div class="metric-value" id="c-pct">0%</div><div class="metric-name">Amélioration</div></div>
+      </div>
+      <div class="section">
+        <div class="section-label">Rapport de comparaison — Qwen2.5-Coder 14B</div>
+        <div class="report-box" id="compare-report"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Résultats -->
+  <!-- Loading -->
+  <div class="loading" id="loading-screen">
+    <div class="spinner" id="loading-spinner"></div>
+    <div class="loading-text" id="loading-title">Analyse en cours...</div>
+    <div class="loading-steps" id="loading-steps">Lancement des outils SAST...<br>Pylint · Bandit · Semgrep</div>
+  </div>
+
+  <!-- Résultats analyse -->
   <div class="results-screen" id="results-screen">
     <div class="results-header">
       <div>
@@ -551,28 +835,13 @@
     </div>
 
     <div class="results-body">
-
-      <!-- Métriques -->
       <div class="metrics-row">
-        <div class="metric-card total">
-          <div class="metric-value" id="m-total">0</div>
-          <div class="metric-name">Total issues</div>
-        </div>
-        <div class="metric-card pylint">
-          <div class="metric-value" id="m-pylint">0</div>
-          <div class="metric-name">Pylint</div>
-        </div>
-        <div class="metric-card bandit">
-          <div class="metric-value" id="m-bandit">0</div>
-          <div class="metric-name">Bandit</div>
-        </div>
-        <div class="metric-card semgrep">
-          <div class="metric-value" id="m-semgrep">0</div>
-          <div class="metric-name">Semgrep</div>
-        </div>
+        <div class="metric-card total"><div class="metric-value" id="m-total">0</div><div class="metric-name">Total issues</div></div>
+        <div class="metric-card pylint"><div class="metric-value" id="m-pylint">0</div><div class="metric-name">Pylint</div></div>
+        <div class="metric-card bandit"><div class="metric-value" id="m-bandit">0</div><div class="metric-name">Bandit</div></div>
+        <div class="metric-card semgrep"><div class="metric-value" id="m-semgrep">0</div><div class="metric-name">Semgrep</div></div>
       </div>
 
-      <!-- SAST détails -->
       <div class="section">
         <div class="section-label">Analyse statique</div>
         <div class="tabs">
@@ -585,12 +854,34 @@
         <div class="tab-content" id="tab-semgrep"></div>
       </div>
 
-      <!-- Rapport LLM -->
       <div class="section">
-        <div class="section-label">Rapport IA — Qwen2.5-Coder 14B</div>
+        <div class="section-label" id="report-label">Rapport IA — Qwen2.5-Coder 14B</div>
         <div class="report-box" id="llm-report"></div>
       </div>
+    </div>
+  </div>
 
+  <!-- ══════════════════════════════════════
+       DASHBOARD MANAGER
+  ══════════════════════════════════════ -->
+  <div class="dashboard-screen" id="dashboard-screen">
+    <div class="dashboard-header">
+      <div>
+        <div class="dashboard-title">Dashboard Manager</div>
+        <div class="dashboard-subtitle">Vue d'ensemble de toutes les analyses CodeWatch AI</div>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" onclick="refreshDashboard()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Actualiser
+      </button>
+    </div>
+
+    <div class="dashboard-body" id="dashboard-body">
+      <!-- Rempli dynamiquement -->
+      <div class="dash-empty" id="dash-loading">
+        <div class="spinner"></div>
+        <div class="dash-empty-text">Chargement du tableau de bord...</div>
+      </div>
     </div>
   </div>
 
@@ -599,20 +890,45 @@
 <script>
 const API_URL = 'http://5.78.97.46:8000';
 let analysisHistory = [];
+let selectedFile = null;
+let currentMode = 'standard';
+let evolutionChart = null;
+let toolsChart = null;
 
-// Charger l'historique depuis le serveur au démarrage
+// ── Navigation active state ──
+function setActiveNav(id) {
+  ['nav-analyze', 'nav-compare', 'nav-dashboard'].forEach(n => {
+    document.getElementById(n).classList.toggle('active-nav', n === id);
+  });
+}
+
+// ── Mode selector ──
+function selectMode(mode) {
+  currentMode = mode;
+  document.getElementById('card-standard').classList.toggle('selected', mode === 'standard');
+  document.getElementById('card-pro').classList.toggle('selected', mode === 'pro');
+  const btn = document.getElementById('analyze-btn');
+  if (mode === 'pro') {
+    btn.textContent = 'Lancer l\'analyse PRO';
+    btn.classList.add('pro-mode');
+    document.getElementById('loading-spinner').classList.add('pro');
+  } else {
+    btn.textContent = 'Lancer l\'analyse';
+    btn.classList.remove('pro-mode');
+    document.getElementById('loading-spinner').classList.remove('pro');
+  }
+}
+
+// ── File handling ──
 async function loadHistoryFromServer() {
   try {
     const response = await fetch(`${API_URL}/history`);
     const data = await response.json();
     analysisHistory = data;
     updateHistory();
-  } catch (err) {
-    console.log('Historique non disponible');
-  }
+  } catch (err) { console.log('Historique non disponible'); }
 }
 
-// Drag & drop
 const dropZone = document.getElementById('drop-zone');
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -623,9 +939,7 @@ dropZone.addEventListener('drop', e => {
   if (file && file.name.endsWith('.py')) handleFile(file);
 });
 
-function onFileSelected(input) {
-  if (input.files[0]) handleFile(input.files[0]);
-}
+function onFileSelected(input) { if (input.files[0]) handleFile(input.files[0]); }
 
 function handleFile(file) {
   selectedFile = file;
@@ -634,8 +948,7 @@ function handleFile(file) {
   document.getElementById('analyze-btn').classList.add('visible');
 }
 
-let selectedFile = null;
-
+// ── Analysis ──
 async function startAnalysis() {
   if (!selectedFile) return;
 
@@ -644,23 +957,30 @@ async function startAnalysis() {
   document.getElementById('results-screen').classList.remove('visible');
 
   const steps = document.getElementById('loading-steps');
-  setTimeout(() => { steps.innerHTML = 'Lancement Pylint...<br>Analyse de la qualité du code'; }, 1000);
-  setTimeout(() => { steps.innerHTML = 'Lancement Bandit...<br>Détection des vulnérabilités'; }, 3000);
-  setTimeout(() => { steps.innerHTML = 'Lancement Semgrep...<br>Analyse des patterns dangereux'; }, 5000);
-  setTimeout(() => { steps.innerHTML = 'Envoi au LLM Qwen2.5-Coder 14B...<br>Génération du rapport enrichi'; }, 7000);
+  const title = document.getElementById('loading-title');
+
+  if (currentMode === 'pro') {
+    title.textContent = 'Analyse PRO en cours...';
+    setTimeout(() => { steps.innerHTML = 'Lancement Pylint...<br>Analyse qualite du code'; }, 1000);
+    setTimeout(() => { steps.innerHTML = 'Lancement Bandit...<br>Detection vulnerabilites OWASP'; }, 3000);
+    setTimeout(() => { steps.innerHTML = 'Lancement Semgrep...<br>Patterns CWE Top 25'; }, 5000);
+    setTimeout(() => { steps.innerHTML = 'Envoi au LLM avec prompt specialise securite...<br>Score CVSS · Mapping OWASP/CWE · Proof of Concept'; }, 7000);
+  } else {
+    title.textContent = 'Analyse en cours...';
+    setTimeout(() => { steps.innerHTML = 'Lancement Pylint...<br>Analyse de la qualite du code'; }, 1000);
+    setTimeout(() => { steps.innerHTML = 'Lancement Bandit...<br>Detection des vulnerabilites'; }, 3000);
+    setTimeout(() => { steps.innerHTML = 'Lancement Semgrep...<br>Analyse des patterns dangereux'; }, 5000);
+    setTimeout(() => { steps.innerHTML = 'Envoi au LLM Qwen2.5-Coder 14B...<br>Generation du rapport enrichi'; }, 7000);
+  }
 
   try {
     const formData = new FormData();
     formData.append('file', selectedFile);
 
-    const response = await fetch(`${API_URL}/analyze`, {
-      method: 'POST',
-      body: formData
-    });
-
+    const endpoint = currentMode === 'pro' ? '/analyze-pro' : '/analyze';
+    const response = await fetch(`${API_URL}${endpoint}`, { method: 'POST', body: formData });
     const data = await response.json();
 
-    // Ajouter en tête de l'historique
     analysisHistory.unshift(data);
     updateHistory();
     showResults(data);
@@ -675,69 +995,70 @@ async function startAnalysis() {
 function showResults(data) {
   const sast = data.sast_results;
   const summary = sast.summary;
+  const isPro = data.mode === 'pro';
 
   document.getElementById('m-total').textContent = sast.total_issues;
   document.getElementById('m-pylint').textContent = summary.pylint_count;
   document.getElementById('m-bandit').textContent = summary.bandit_count;
   document.getElementById('m-semgrep').textContent = summary.semgrep_count;
 
-  document.getElementById('result-filename').textContent = data.filename;
+  const modeBadge = isPro
+    ? '<span class="mode-badge badge-pro" style="font-size:0.6rem;">PRO</span>'
+    : '<span class="mode-badge badge-standard" style="font-size:0.6rem;">Standard</span>';
+  document.getElementById('result-filename').innerHTML = data.filename + ' ' + modeBadge;
   document.getElementById('result-meta').textContent =
     summary.pylint_count + ' Pylint · ' +
     summary.bandit_count + ' Bandit · ' +
     summary.semgrep_count + ' Semgrep' +
-    (data.created_at ? ' · ' + data.created_at : '');
+    (data.created_at ? ' · ' + data.created_at : '') +
+    ' · ' + (data.model || 'Qwen2.5-Coder 14B');
 
   // Pylint
   const pylintEl = document.getElementById('tab-pylint');
   if (!sast.pylint || sast.pylint.length === 0) {
-    pylintEl.innerHTML = '<div class="no-issues">Aucun problème détecté.</div>';
+    pylintEl.innerHTML = '<div class="no-issues">Aucun probleme detecte.</div>';
   } else {
     pylintEl.innerHTML = sast.pylint.map(i => {
       if (i.error) return '';
       const type = i.type || 'convention';
       const bc = type === 'error' ? 'badge-error' : type === 'warning' ? 'badge-warning' : 'badge-convention';
-      return `<div class="issue">
-        <span class="issue-badge ${bc}">${type}</span>
-        <span class="issue-line">L.${i.line}</span>
-        <div><div class="issue-text">${i.message}</div><div class="issue-symbol">${i.symbol}</div></div>
-      </div>`;
+      return `<div class="issue"><span class="issue-badge ${bc}">${type}</span><span class="issue-line">L.${i.line}</span><div><div class="issue-text">${i.message}</div><div class="issue-symbol">${i.symbol}</div></div></div>`;
     }).join('');
   }
 
   // Bandit
   const banditEl = document.getElementById('tab-bandit');
   if (!sast.bandit || sast.bandit.length === 0) {
-    banditEl.innerHTML = '<div class="no-issues">Aucune vulnérabilité détectée.</div>';
+    banditEl.innerHTML = '<div class="no-issues">Aucune vulnerabilite detectee.</div>';
   } else {
     banditEl.innerHTML = sast.bandit.map(i => {
       if (i.error) return '';
       const sev = i.severity || 'LOW';
       const bc = sev === 'HIGH' ? 'badge-high' : sev === 'MEDIUM' ? 'badge-medium' : 'badge-low';
-      return `<div class="issue">
-        <span class="issue-badge ${bc}">${sev}</span>
-        <span class="issue-line">L.${i.line}</span>
-        <div><div class="issue-text">${i.message}</div><div class="issue-symbol">Confiance : ${i.confidence}</div></div>
-      </div>`;
+      return `<div class="issue"><span class="issue-badge ${bc}">${sev}</span><span class="issue-line">L.${i.line}</span><div><div class="issue-text">${i.message}</div><div class="issue-symbol">Confiance : ${i.confidence}</div></div></div>`;
     }).join('');
   }
 
   // Semgrep
   const semgrepEl = document.getElementById('tab-semgrep');
   if (!sast.semgrep || sast.semgrep.length === 0) {
-    semgrepEl.innerHTML = '<div style="font-size:0.83rem;color:#6b7280;padding:12px 14px;">Aucun pattern dangereux détecté.</div>';
+    semgrepEl.innerHTML = '<div style="font-size:0.83rem;color:#6b7280;padding:12px 14px;">Aucun pattern dangereux detecte.</div>';
   } else {
     semgrepEl.innerHTML = sast.semgrep.map(i => {
       if (i.error) return '';
-      return `<div class="issue">
-        <span class="issue-badge badge-high">${i.severity || 'N/A'}</span>
-        <span class="issue-line">L.${i.line}</span>
-        <div><div class="issue-text">${i.message}</div></div>
-      </div>`;
+      return `<div class="issue"><span class="issue-badge badge-high">${i.severity || 'N/A'}</span><span class="issue-line">L.${i.line}</span><div><div class="issue-text">${i.message}</div></div></div>`;
     }).join('');
   }
 
   // Rapport LLM
+  const reportLabel = document.getElementById('report-label');
+  reportLabel.textContent = isPro
+    ? 'Rapport PRO — Qwen2.5-Coder 14B + Security Prompt Engineering'
+    : 'Rapport IA — Qwen2.5-Coder 14B';
+
+  const reportBox = document.getElementById('llm-report');
+  reportBox.className = isPro ? 'report-box pro' : 'report-box';
+
   let report = data.llm_report
     .replace(/###\s(.+)/g, '<h3>$1</h3>')
     .replace(/##\s(.+)/g, '<h3>$1</h3>')
@@ -749,7 +1070,7 @@ function showResults(data) {
     .replace(/^/, '<p>')
     .replace(/$/, '</p>');
 
-  document.getElementById('llm-report').innerHTML = report;
+  reportBox.innerHTML = report;
 
   document.getElementById('loading-screen').classList.remove('visible');
   document.getElementById('results-screen').classList.add('visible');
@@ -766,12 +1087,14 @@ function switchTab(name) {
 
 function updateHistory() {
   const list = document.getElementById('history-list');
-  list.innerHTML = analysisHistory.slice(0, 15).map((h, i) =>
-    `<div class="history-item" id="hist-${i}" onclick="loadHistory(${i})">
-      <div style="font-size:0.82rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.filename}</div>
+  list.innerHTML = analysisHistory.slice(0, 15).map((h, i) => {
+    const isPro = h.mode === 'pro';
+    const badge = isPro ? '<span style="font-size:0.6rem;background:#ede9fe;color:#7c3aed;padding:1px 5px;border-radius:3px;font-weight:700;">PRO</span>' : '';
+    return `<div class="history-item" id="hist-${i}" onclick="loadHistory(${i})">
+      <div style="font-size:0.82rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.filename} ${badge}</div>
       <div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">${h.created_at || ''} · ${h.total_issues || h.sast_results?.total_issues || 0} issues</div>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
   setActiveHistory(0);
 }
 
@@ -787,17 +1110,332 @@ function loadHistory(index) {
 }
 
 function resetToWelcome() {
+  setActiveNav('nav-analyze');
   selectedFile = null;
   document.getElementById('welcome-screen').style.display = 'flex';
   document.getElementById('results-screen').classList.remove('visible');
   document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('compare-screen').style.display = 'none';
+  document.getElementById('compare-results-screen').classList.remove('visible');
+  document.getElementById('dashboard-screen').classList.remove('visible');
   document.getElementById('analyze-btn').classList.remove('visible');
   document.getElementById('file-info').style.display = 'none';
   document.getElementById('file-input').value = '';
   document.querySelectorAll('.history-item').forEach(h => h.classList.remove('active'));
 }
 
-// Charger l'historique au démarrage
+// ── Compare ──
+let fileBefore = null;
+let fileAfter = null;
+
+function showCompare() {
+  setActiveNav('nav-compare');
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('results-screen').classList.remove('visible');
+  document.getElementById('compare-results-screen').classList.remove('visible');
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('dashboard-screen').classList.remove('visible');
+  document.getElementById('compare-screen').style.display = 'flex';
+}
+
+function onBeforeSelected(input) {
+  fileBefore = input.files[0];
+  document.getElementById('before-name').textContent = fileBefore.name;
+  checkCompareReady();
+}
+
+function onAfterSelected(input) {
+  fileAfter = input.files[0];
+  document.getElementById('after-name').textContent = fileAfter.name;
+  checkCompareReady();
+}
+
+function checkCompareReady() {
+  const btn = document.getElementById('compare-btn');
+  if (fileBefore && fileAfter) btn.style.display = 'inline-block';
+}
+
+async function startCompare() {
+  document.getElementById('compare-screen').style.display = 'none';
+  document.getElementById('loading-screen').classList.add('visible');
+
+  const steps = document.getElementById('loading-steps');
+  setTimeout(() => { steps.innerHTML = 'Analyse de la version originale...<br>Pylint · Bandit · Semgrep'; }, 1000);
+  setTimeout(() => { steps.innerHTML = 'Analyse de la version corrigee...<br>Pylint · Bandit · Semgrep'; }, 4000);
+  setTimeout(() => { steps.innerHTML = 'Generation du rapport comparatif...<br>Qwen2.5-Coder 14B'; }, 7000);
+
+  try {
+    const formData = new FormData();
+    formData.append('file_before', fileBefore);
+    formData.append('file_after', fileAfter);
+
+    const response = await fetch(`${API_URL}/compare`, { method: 'POST', body: formData });
+    const data = await response.json();
+    showCompareResults(data);
+
+  } catch (err) {
+    document.getElementById('loading-screen').classList.remove('visible');
+    document.getElementById('compare-screen').style.display = 'flex';
+    alert('Erreur : ' + err.message);
+  }
+}
+
+function showCompareResults(data) {
+  const imp = data.improvement;
+  document.getElementById('c-before').textContent = imp.before_total;
+  document.getElementById('c-after').textContent = imp.after_total;
+  document.getElementById('c-resolved').textContent = imp.issues_resolved;
+  document.getElementById('c-pct').textContent = imp.improvement_pct + '%';
+  document.getElementById('compare-meta').textContent =
+    imp.before_total + ' issues → ' + imp.after_total + ' issues · ' + imp.improvement_pct + '% d\'amelioration';
+
+  let report = data.llm_report
+    .replace(/###\s(.+)/g, '<h3>$1</h3>')
+    .replace(/##\s(.+)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/```python([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+
+  document.getElementById('compare-report').innerHTML = report;
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('compare-results-screen').classList.add('visible');
+}
+
+// ══════════════════════════════════════
+// DASHBOARD MANAGER
+// ══════════════════════════════════════
+
+function showDashboard() {
+  setActiveNav('nav-dashboard');
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('results-screen').classList.remove('visible');
+  document.getElementById('compare-screen').style.display = 'none';
+  document.getElementById('compare-results-screen').classList.remove('visible');
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('dashboard-screen').classList.add('visible');
+  loadDashboardData();
+}
+
+async function refreshDashboard() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  await loadDashboardData();
+  setTimeout(() => btn.classList.remove('spinning'), 600);
+}
+
+async function loadDashboardData() {
+  const body = document.getElementById('dashboard-body');
+  body.innerHTML = '<div class="dash-empty" id="dash-loading"><div class="spinner"></div><div class="dash-empty-text">Chargement...</div></div>';
+
+  // Destroy old charts
+  if (evolutionChart) { evolutionChart.destroy(); evolutionChart = null; }
+  if (toolsChart) { toolsChart.destroy(); toolsChart = null; }
+
+  try {
+    const response = await fetch(`${API_URL}/dashboard`);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const d = await response.json();
+    renderDashboard(d);
+  } catch (err) {
+    body.innerHTML = `<div class="dash-empty">
+      <div class="dash-empty-icon">⚠️</div>
+      <div class="dash-empty-text">Impossible de charger le tableau de bord.<br>
+      <span style="font-size:0.75rem;color:#bbb;">${err.message}</span></div>
+    </div>`;
+  }
+}
+
+function renderDashboard(d) {
+  const body = document.getElementById('dashboard-body');
+
+  // ── Calcul score moyen sur 100 ──
+  const avgScore = d.avg_score !== undefined ? d.avg_score : null;
+  const scoreDisplay = avgScore !== null ? avgScore.toFixed(1) : '—';
+
+  // ── Total issues toutes analyses ──
+  const totalToolHits = (d.tools_stats.pylint || 0) + (d.tools_stats.bandit || 0) + (d.tools_stats.semgrep || 0);
+
+  body.innerHTML = `
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card kpi-total">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-value" id="kpi-analyses">${d.total_analyses}</div>
+        <div class="kpi-label">Analyses totales</div>
+      </div>
+      <div class="kpi-card kpi-score">
+        <div class="kpi-icon">🛡️</div>
+        <div class="kpi-value" id="kpi-score">${scoreDisplay}</div>
+        <div class="kpi-label">Score sécurité moyen</div>
+      </div>
+      <div class="kpi-card kpi-issues">
+        <div class="kpi-icon">🔍</div>
+        <div class="kpi-value" id="kpi-issues">${Math.round(d.avg_issues)}</div>
+        <div class="kpi-label">Issues moyennes / analyse</div>
+      </div>
+      <div class="kpi-card kpi-tools">
+        <div class="kpi-icon">⚙️</div>
+        <div class="kpi-value" id="kpi-tools">${totalToolHits}</div>
+        <div class="kpi-label">Détections SAST totales</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-card-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Évolution du score de sécurité
+        </div>
+        <div class="chart-wrap">
+          <canvas id="evolution-chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Répartition des outils
+        </div>
+        <div class="chart-wrap">
+          <canvas id="tools-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Vulnerable Files -->
+    <div class="section">
+      <div class="section-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Fichiers les plus vulnérables
+      </div>
+      <div class="files-table">
+        <div class="files-table-header">
+          <span>Fichier</span>
+          <span>Total</span>
+          <span>Pylint</span>
+          <span>Bandit</span>
+          <span>Semgrep</span>
+        </div>
+        <div id="top-files-body"></div>
+      </div>
+    </div>
+  `;
+
+  // ── Evolution chart ──
+  const evoData = d.evolution || [];
+  const labels = evoData.map((e, i) => {
+    if (e.date) {
+      const dt = new Date(e.date);
+      return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    }
+    return 'A' + (i + 1);
+  });
+  const scores = evoData.map(e => e.score !== undefined ? e.score : (e.total_issues || 0));
+
+  const evoCtx = document.getElementById('evolution-chart').getContext('2d');
+  evolutionChart = new Chart(evoCtx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Score',
+        data: scores,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#2563eb',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.35,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' Score : ' + ctx.parsed.y
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#9ca3af' }
+        },
+        y: {
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 10 }, color: '#9ca3af' },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  // ── Donut chart tools ──
+  const ts = d.tools_stats || {};
+  const toolsCtx = document.getElementById('tools-chart').getContext('2d');
+  toolsChart = new Chart(toolsCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pylint', 'Bandit', 'Semgrep'],
+      datasets: [{
+        data: [ts.pylint || 0, ts.bandit || 0, ts.semgrep || 0],
+        backgroundColor: ['#fef3c7', '#fee2e2', '#ede9fe'],
+        borderColor: ['#f59e0b', '#ef4444', '#8b5cf6'],
+        borderWidth: 2,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { size: 11 },
+            color: '#6b7280',
+            padding: 12,
+            boxWidth: 12
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.label + ' : ' + ctx.parsed + ' détections'
+          }
+        }
+      },
+      cutout: '62%'
+    }
+  });
+
+  // ── Top files ──
+  const topFiles = d.top_files || [];
+  const topBody = document.getElementById('top-files-body');
+  if (topFiles.length === 0) {
+    topBody.innerHTML = '<div class="dash-empty" style="padding:30px;"><div class="dash-empty-text">Aucune donnée disponible</div></div>';
+  } else {
+    topBody.innerHTML = topFiles.map(f => `
+      <div class="files-table-row">
+        <span class="file-name">${f.filename || f.file || '—'}</span>
+        <span class="file-stat stat-total">${f.total_issues || 0}</span>
+        <span class="file-stat stat-pylint">${f.pylint_count || 0}</span>
+        <span class="file-stat stat-bandit">${f.bandit_count || 0}</span>
+        <span class="file-stat stat-semgrep">${f.semgrep_count || 0}</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ── Init ──
 loadHistoryFromServer();
 </script>
 </body>

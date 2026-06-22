@@ -29,3 +29,4 @@ def bad_function():
 # Commande système dangereuse
 def run_command(cmd):
     os.system(cmd)
+# test bot PR
