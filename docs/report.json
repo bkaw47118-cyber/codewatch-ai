@@ -1,11 +1,11 @@
 {
-  "run_date": "4",
-  "commit": "b36845f",
+  "run_date": "6",
+  "commit": "ee45b1a",
   "branch": "main",
-  "global_score": 84,
-  "total_files": 6,
-  "total_issues": 48,
-  "avg_issues": 8.0,
+  "global_score": 85,
+  "total_files": 5,
+  "total_issues": 39,
+  "avg_issues": 7.8,
   "badge_color": "brightgreen",
   "badge_label": "excellent",
   "critical_files": [
@@ -36,13 +36,6 @@
       "pylint": 13,
       "bandit": 0,
       "semgrep": 1
-    },
-    {
-      "file": "database.py",
-      "issues": 9,
-      "pylint": 9,
-      "bandit": 0,
-      "semgrep": 0
     },
     {
       "file": "prompt_builder.py",
@@ -83,14 +76,6 @@
       "pylint": 13,
       "bandit": 0,
       "semgrep": 1,
-      "mode": "standard"
-    },
-    {
-      "file": "database.py",
-      "issues": 9,
-      "pylint": 9,
-      "bandit": 0,
-      "semgrep": 0,
       "mode": "standard"
     },
     {
