@@ -1,7 +1,7 @@
 # CodeWatch AI
 
 <!-- CODEWATCH-BADGES-START -->
-![Security Score](https://img.shields.io/badge/security%20score--%2F100-lightgrey?style=flat-square&logo=shield) ![Issues](https://img.shields.io/badge/issues--%20-lightgrey?style=flat-square) ![Tools](https://img.shields.io/badge/tools-Pylint%20%7C%20Bandit%20%7C%20Semgrep-blue?style=flat-square) ![Model](https://img.shields.io/badge/LLM-Qwen2.5--Coder%2014B-purple?style=flat-square)
+![Security Score](https://img.shields.io/badge/security%20score-100%2F100-brightgreen?style=flat-square&logo=shield) ![Issues](https://img.shields.io/badge/issues-0-orange?style=flat-square) ![Tools](https://img.shields.io/badge/tools-Pylint%20%7C%20Bandit%20%7C%20Semgrep-blue?style=flat-square) ![Model](https://img.shields.io/badge/LLM-Qwen2.5--Coder%2014B-purple?style=flat-square)
 <!-- CODEWATCH-BADGES-END -->
 
 ![CI](https://github.com/bkaw47118-cyber/codewatch-ai/actions/workflows/codewatch.yml/badge.svg)

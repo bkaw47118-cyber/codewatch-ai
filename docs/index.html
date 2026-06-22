@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CodeWatch AI — Rapport de sécurité</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#0d0d0d;padding:32px}
+  .header{background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;padding:32px;border-radius:16px;margin-bottom:28px}
+  .header h1{font-size:1.6rem;font-weight:700;margin-bottom:6px}
+  .header p{font-size:0.88rem;opacity:0.85}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+  .kpi{background:white;border:1px solid #e5e5e5;border-radius:12px;padding:20px;border-top:3px solid}
+  .kpi.blue{border-top-color:#2563eb}.kpi.green{border-top-color:#10b981}
+  .kpi.red{border-top-color:#ef4444}.kpi.yellow{border-top-color:#f59e0b}
+  .kpi-val{font-size:2rem;font-weight:700;line-height:1;margin-bottom:4px}
+  .kpi.blue .kpi-val{color:#2563eb}.kpi.green .kpi-val{color:#10b981}
+  .kpi.red .kpi-val{color:#ef4444}.kpi.yellow .kpi-val{color:#f59e0b}
+  .kpi-label{font-size:0.73rem;color:#999;text-transform:uppercase;letter-spacing:0.5px}
+  .card{background:white;border:1px solid #e5e5e5;border-radius:12px;padding:24px;margin-bottom:20px}
+  .card h2{font-size:0.78rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f0f0f0}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:0.72rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;padding:8px 12px;border-bottom:1px solid #f0f0f0}
+  td{padding:10px 12px;font-size:0.84rem;border-bottom:1px solid #f9f9f9}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafafa}
+  .badge{display:inline-block;padding:3px 8px;border-radius:5px;font-size:0.68rem;font-weight:700;text-transform:uppercase}
+  .badge.critical{background:#fee2e2;color:#dc2626}
+  .badge.warning{background:#fef3c7;color:#d97706}
+  .badge.ok{background:#dcfce7;color:#16a34a}
+  .score-bar{background:#f0f0f0;border-radius:99px;height:8px;margin-top:8px}
+  .score-fill{height:8px;border-radius:99px;background:linear-gradient(90deg,#2563eb,#7c3aed)}
+  .footer{text-align:center;font-size:0.75rem;color:#9ca3af;margin-top:32px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛡️ CodeWatch AI — Rapport de sécurité</h1>
+  <p>Commit : 7344ccd &nbsp;·&nbsp; Branche : main &nbsp;·&nbsp; Run #3</p>
+</div>
+<div class="kpi-row">
+  <div class="kpi blue"><div class="kpi-val">100</div><div class="kpi-label">Score global /100</div>
+    <div class="score-bar"><div class="score-fill" style="width:100%"></div></div></div>
+  <div class="kpi yellow"><div class="kpi-val">0</div><div class="kpi-label">Fichiers analysés</div></div>
+  <div class="kpi yellow"><div class="kpi-val">0</div><div class="kpi-label">Issues totales</div></div>
+  <div class="kpi green"><div class="kpi-val">0</div><div class="kpi-label">Fichiers critiques</div></div>
+</div>
+<div class="card">
+  <h2>📋 Détail par fichier</h2>
+  <table>
+    <thead><tr><th>Fichier</th><th>Total</th><th>Pylint</th><th>Bandit</th><th>Semgrep</th><th>Statut</th></tr></thead>
+    <tbody>
+
+    </tbody>
+  </table>
+</div>
+<div class="footer">
+  Généré automatiquement par <strong>CodeWatch AI</strong> — Kawther BOUZEROUATA · ENPO-MA 2026<br>
+  Pylint · Bandit · Semgrep · Qwen2.5-Coder 14B
+</div>
+</body></html>
